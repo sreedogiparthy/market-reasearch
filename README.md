@@ -32,7 +32,7 @@ A Python-based tool for analyzing Indian stock market data with advanced technic
    ```
 
 4. Set up your environment variables:
-   - Copy `.env.example` to `.env`
+   - Copy `.env.sample` to `.env`
    - Add your Groq API key:
      ```
      GROQ_API_KEY=your_groq_api_key_here
@@ -43,6 +43,13 @@ A Python-based tool for analyzing Indian stock market data with advanced technic
 Run the analysis:
 ```bash
 python main.py
+
+# Analyze all stock groups
+python main.py
+
+# Analyze specific group (e.g., nifty_50)
+python main.py nifty_50
+
 ```
 
 The script will:
