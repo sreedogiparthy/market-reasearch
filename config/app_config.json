@@ -1,0 +1,21 @@
+{
+  "analysis_settings": {
+    "default_period": "1y",
+    "technical_indicators": ["RSI", "MACD", "BBANDS", "SMA", "VWAP", "ATR", "ICHIMOKU"],
+    "risk_free_rate": 0.05,
+    "cache_duration": 300,
+    "max_retries": 3
+  },
+  "plot_settings": {
+    "style": "fivethirtyeight",
+    "figsize": [15, 8],
+    "dpi": 100,
+    "save_directory": "plots"
+  },
+  "risk_settings": {
+    "rsi_overbought": 70,
+    "rsi_oversold": 30,
+    "high_volatility_threshold": 0.02,
+    "volume_spike_threshold": 2.0
+  }
+}

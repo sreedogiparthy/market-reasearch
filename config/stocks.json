@@ -1,5 +1,5 @@
 {
-"nifty_50": {
+  "nifty_50": {
     "Reliance Industries": {
       "symbol": "RELIANCE.NS",
       "sector": "Oil & Gas"
@@ -9,7 +9,7 @@
       "sector": "Banking"
     },
     "Bharti Airtel": {
-      "symbol": "BHARTIARTL.NS",
+      "symbol": "BHARTIARTL.NS", 
       "sector": "Telecom"
     },
     "Tata Consultancy Services": {
@@ -39,180 +39,8 @@
     "Larsen & Toubro": {
       "symbol": "LT.NS",
       "sector": "Construction"
-    },
-    "ITC": {
-      "symbol": "ITC.NS",
-      "sector": "Nifty 50"
-    },
-    "Maruti Suzuki": {
-      "symbol": "MARUTI-SUZUKI.NS",
-      "sector": "Nifty 50"
-    },
-    "Mahindra & Mahindra": {
-      "symbol": "MAHINDRA-&-MAHINDRA.NS",
-      "sector": "Nifty 50"
-    },
-    "Kotak Bank": {
-      "symbol": "KOTAK-BANK.NS",
-      "sector": "Banking"
-    },
-    "HCL Technologies": {
-      "symbol": "HCL-TECHNOLOGIES.NS",
-      "sector": "IT"
-    },
-    "Sun Pharmaceutical": {
-      "symbol": "SUN-PHARMACEUTICAL.NS",
-      "sector": "Pharmaceutical"
-    },
-    "Axis Bank": {
-      "symbol": "AXIS-BANK.NS",
-      "sector": "Banking"
-    },
-    "UltraTech Cement": {
-      "symbol": "ULTRATECH-CEMENT.NS",
-      "sector": "Construction"
-    },
-    "Bajaj Finserv": {
-      "symbol": "BAJAJ-FINSERV.NS",
-      "sector": "Financial Services"
-    },
-    "Titan": {
-      "symbol": "TITAN.NS",
-      "sector": "Metals"
-    },
-    "NTPC": {
-      "symbol": "NTPC.NS",
-      "sector": "Power"
-    },
-    "Oil & Natural Gas Corporation": {
-      "symbol": "OIL-&-NATURAL-GAS-CORPORATION.NS",
-      "sector": "Oil & Gas"
-    },
-    "Adani Ports & SEZ": {
-      "symbol": "ADANI-PORTS-&-SEZ.NS",
-      "sector": "Ports"
-    },
-    "Bharat Electronics": {
-      "symbol": "BHARAT-ELECTRONICS.NS",
-      "sector": "Electronics"
-    },
-    "Eternal": {
-      "symbol": "ETERNAL.NS",
-      "sector": "Steel"
-    },
-    "JSW Steel": {
-      "symbol": "JSW-STEEL.NS",
-      "sector": "Steel"
-    },
-    "Adani Enterprises": {
-      "symbol": "ADANI-ENTERPRISES.NS",
-      "sector": "Energy"
-    },
-    "Power Grid Corporation of India": {
-      "symbol": "POWER-GRID-CORPORATION-OF-INDIA.NS",
-      "sector": "Power"
-    },
-    "Wipro": {
-      "symbol": "WIPRO.NS",
-      "sector": "IT"
-    },
-    "Bajaj Auto": {
-      "symbol": "BAJAJ-AUTO.NS",
-      "sector": "Automobile"
-    },
-    "Nestle": {
-      "symbol": "NESTLE.NS",
-      "sector": "FMCG"
-    },
-    "Asian Paints": {
-      "symbol": "ASIAN-PAINTS.NS",
-      "sector": "Paints"
-    },
-    "Coal India": {
-      "symbol": "COAL-INDIA.NS",
-      "sector": "Energy"
-    },
-    "Tata Steel": {
-      "symbol": "TATA-STEEL.NS",
-      "sector": "Steel"
-    },
-    "Interglobe Aviation": {
-      "symbol": "INTERGLOBE-AVIATION.NS",
-      "sector": "Airline"
-    },
-    "Grasim Industries": {
-      "symbol": "GRASIM-INDUSTRIES.NS",
-      "sector": "Textiles"
-    },
-    "SBI Life Insurance": {
-      "symbol": "SBI-LIFE-INSURANCE.NS",
-      "sector": "Insurance"
-    },
-    "Jio Financial Services": {
-      "symbol": "JIO-FINANCIAL-SERVICES.NS",
-      "sector": "Financial Services"
-    },
-    "Eicher Motors": {
-      "symbol": "EICHER-MOTORS.NS",
-      "sector": "Automobile"
-    },
-    "Hindalco Industries": {
-      "symbol": "HINDALCO-INDUSTRIES.NS",
-      "sector": "Steel"
-    },
-    "Trent": {
-      "symbol": "TRENT.NS",
-      "sector": "Steel"
-    },
-    "HDFC Life Insurance": {
-      "symbol": "HDFC-LIFE-INSURANCE.NS",
-      "sector": "Insurance"
-    },
-    "Tata Motors Passenger Vehicles": {
-      "symbol": "TATA-MOTORS-PASSENGER-VEHICLES.NS",
-      "sector": "Automobile"
-    },
-    "Tech Mahindra": {
-      "symbol": "TECH-MAHINDRA.NS",
-      "sector": "IT"
-    },
-    "Shriram Finance": {
-      "symbol": "SHRIRAM-FINANCE.NS",
-      "sector": "Financial Services"
-    },
-    "Cipla": {
-      "symbol": "CIPLA.NS",
-      "sector": "Pharmaceutical"
-    },
-    "Tata Consumer Products": {
-      "symbol": "TATA-CONSUMER-PRODUCTS.NS",
-      "sector": "FMCG"
-    },
-    "Max Healthcare Institute": {
-      "symbol": "MAX-HEALTHCARE-INSTITUTE.NS",
-      "sector": "Healthcare"
-    },
-    "Apollo Hospitals": {
-      "symbol": "APOLLO-HOSPITALS.NS",
-      "sector": "Healthcare"
-    },
-    "Dr Reddys Laboratories": {
-      "symbol": "DR-REDDYS-LABORATORIES.NS",
-      "sector": "Pharmaceutical"
-    },
-    "Mahindra & Mahindra": {
-      "symbol": "MAHINDRA-&-MAHINDRA.NS",
-      "sector": "Automobile"
-    },
-    "Kotak Bank": {
-      "symbol": "KOTAK-BANK.NS",
-      "sector": "Banking"
-    },
-    "HCL Technologies": {
-      "symbol": "HCL-TECHNOLOGIES.NS",
-      "sector": "IT"
     }
-},
+  },
   "indian_it": {
     "TCS": {
       "symbol": "TCS.NS",
@@ -232,26 +60,6 @@
     },
     "Tech Mahindra": {
       "symbol": "TECHM.NS",
-      "sector": "IT Services"
-    },
-    "LTI Mindtree": {
-      "symbol": "LTIM.NS",
-      "sector": "IT Services"
-    },
-    "Mphasis": {
-      "symbol": "MPHASIS.NS",
-      "sector": "IT Services"
-    },
-    "Coforge": {
-      "symbol": "COFORGE.NS",
-      "sector": "IT Services"
-    },
-    "Persistent": {
-      "symbol": "PERSISTENT.NS",
-      "sector": "IT Services"
-    },
-    "Oracle Financial": {
-      "symbol": "OFSS.NS",
       "sector": "IT Services"
     }
   },

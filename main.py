@@ -29,10 +29,30 @@ def load_stock_config():
     try:
         config_path = Path(__file__).parent / 'config' / 'stocks.json'
         with open(config_path, 'r') as f:
-            return json.load(f)
+            config_data = json.load(f)
+        
+        # Normalize configuration to ensure consistent structure
+        normalized_config = {}
+        
+        for group_name, stocks in config_data.items():
+            normalized_config[group_name] = {}
+            
+            for company, stock_info in stocks.items():
+                if isinstance(stock_info, str):
+                    # Convert simple string format to object format
+                    normalized_config[group_name][company] = {
+                        "symbol": stock_info,
+                        "sector": "Unknown"
+                    }
+                elif isinstance(stock_info, dict):
+                    normalized_config[group_name][company] = stock_info
+                else:
+                    print(f"Warning: Invalid format for {company} in {group_name}")
+        
+        return normalized_config
+        
     except Exception as e:
         print(f"Error loading stock config: {e}")
-        # Fallback to default configuration
         return {
             "indian_it": {
                 "TCS": {"symbol": "TCS.NS", "sector": "IT Services"},
@@ -43,193 +63,204 @@ def load_stock_config():
 # Load stock configurations
 STOCK_CONFIG = load_stock_config()
 
-def get_stock_data(stock_group="indian_it", period="1y", interval="1d"):
+def get_stock_data(stock_group="indian_it", period="6mo", interval="1d"):
     """
-    Fetch stock data using yfinance with technical indicators
-    
-    Args:
-        stock_group (str): Key from STOCK_CONFIG to get the list of stocks
-        period (str): Data period (1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max)
-        interval (str): Data interval (1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
-    
-    Returns:
-        tuple: (stocks_data, metadata) where:
-            - stocks_data: dict containing data and technical indicators for each stock
-            - metadata: dict containing additional information about the stocks
+    Fetch stock data using yfinance with basic technical indicators
     """
     stocks_data = {}
     metadata = {}
     
     if stock_group not in STOCK_CONFIG:
-        print(f"Stock group '{stock_group}' not found in configuration. Using 'indian_it' as default.")
+        print(f"Stock group '{stock_group}' not found. Using 'indian_it' as default.")
         stock_group = "indian_it"
     
     stock_list = STOCK_CONFIG[stock_group]
     
     for company, info in stock_list.items():
-        ticker = info['symbol']
+        if isinstance(info, str):
+            ticker = info
+            sector = "Unknown"
+        else:
+            ticker = info.get('symbol', '')
+            sector = info.get('sector', 'Unknown')
+        
+        if not ticker:
+            print(f"No ticker symbol for {company}")
+            continue
+            
         try:
+            print(f"Fetching {company} ({ticker})...")
+            
             # Fetch data
-            df = yf.download(
-                ticker,
-                period=period,
-                interval=interval,
-                progress=False,
-                auto_adjust=True
-            )
+            stock = yf.Ticker(ticker)
+            df = stock.history(period=period, interval=interval, auto_adjust=True)
             
             if df.empty:
-                print(f"No data found for {company} ({ticker})")
+                print(f"No data for {company}")
                 continue
+            
+            # Calculate basic indicators safely
+            try:
+                # Simple moving averages
+                if len(df) >= 20:
+                    df['SMA_20'] = df['Close'].rolling(window=20).mean()
+                if len(df) >= 50:
+                    df['SMA_50'] = df['Close'].rolling(window=50).mean()
+                if len(df) >= 200:
+                    df['SMA_200'] = df['Close'].rolling(window=200).mean()
                 
-            # Calculate technical indicators
-            # RSI (Relative Strength Index)
-            df['RSI'] = ta.rsi(df['Close'], length=14)
+                # RSI
+                if len(df) >= 15:
+                    delta = df['Close'].diff()
+                    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                    rs = gain / loss
+                    df['RSI'] = 100 - (100 / (1 + rs))
+                
+                # Basic price change
+                df['Daily_Change'] = df['Close'].pct_change() * 100
+                
+            except Exception as ind_error:
+                print(f"Indicator error for {company}: {ind_error}")
+                # Continue with basic data
             
-            # MACD (Moving Average Convergence Divergence)
-            macd = ta.macd(df['Close'])
-            df = pd.concat([df, macd], axis=1)
-            
-            # Bollinger Bands
-            bbands = ta.bbands(df['Close'], length=20, std=2)
-            df = pd.concat([df, bbands], axis=1)
-            
-            # Moving Averages
-            df['SMA_20'] = ta.sma(df['Close'], length=20)
-            df['SMA_50'] = ta.sma(df['Close'], length=50)
-            df['SMA_200'] = ta.sma(df['Close'], length=200)
-            
-            # Volume Weighted Average Price (VWAP)
-            df['VWAP'] = ta.vwap(df['High'], df['Low'], df['Close'], df['Volume'])
-            
-            # Store the data and metadata
             stocks_data[company] = df
             metadata[company] = {
                 'ticker': ticker,
-                'sector': info.get('sector', 'N/A'),
+                'sector': sector,
                 'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
             
         except Exception as e:
-            print(f"Error processing {company} ({ticker}): {str(e)}")
+            print(f"Error processing {company}: {e}")
     
     return stocks_data, metadata
 
-def generate_technical_analysis(stock_data):
-    """Generate technical analysis for stocks"""
+def generate_simple_analysis(stock_data):
+    """Generate technical analysis without complex pandas_ta indicators"""
     analysis = {}
     
     for company, data in stock_data.items():
         try:
-            latest = data.iloc[-1]
-            prev_day = data.iloc[-2] if len(data) > 1 else latest
+            if data.empty or len(data) < 2:
+                analysis[company] = {"error": "Insufficient data"}
+                continue
+            
+            # Get the latest row safely
+            latest_row = data.iloc[-1]
+            prev_row = data.iloc[-2] if len(data) > 1 else latest_row
+            
+            # Extract scalar values safely
+            current_price = float(latest_row['Close']) if not pd.isna(latest_row['Close']) else 0.0
+            prev_price = float(prev_row['Close']) if not pd.isna(prev_row['Close']) else current_price
             
             # Calculate price change
-            price_change = ((latest['Close'] - prev_day['Close']) / prev_day['Close']) * 100
+            price_change_pct = 0.0
+            if prev_price != 0:
+                price_change_pct = ((current_price - prev_price) / prev_price) * 100
             
-            # Determine trend based on moving averages
-            trend = "Bullish" if latest['SMA_20'] > latest['SMA_50'] > latest['SMA_200'] else "Bearish"
+            # Trend analysis using simple comparisons
+            trend = "Neutral"
+            try:
+                sma_20 = float(latest_row.get('SMA_20', current_price)) if not pd.isna(latest_row.get('SMA_20')) else current_price
+                sma_50 = float(latest_row.get('SMA_50', current_price)) if not pd.isna(latest_row.get('SMA_50')) else current_price
+                sma_200 = float(latest_row.get('SMA_200', current_price)) if not pd.isna(latest_row.get('SMA_200')) else current_price
+                
+                if sma_20 > sma_50 and sma_50 > sma_200:
+                    trend = "Bullish"
+                elif sma_20 < sma_50 and sma_50 < sma_200:
+                    trend = "Bearish"
+            except:
+                trend = "Unknown"
             
             # RSI analysis
-            rsi_signal = ""
-            if latest['RSI'] > 70:
-                rsi_signal = "Overbought"
-            elif latest['RSI'] < 30:
-                rsi_signal = "Oversold"
-            else:
-                rsi_signal = "Neutral"
-                
-            # MACD analysis
-            macd_signal = ""
-            if latest['MACD_12_26_9'] > latest['MACDs_12_26_9'] and \
-               data['MACD_12_26_9'].iloc[-2] <= data['MACDs_12_26_9'].iloc[-2]:
-                macd_signal = "Bullish Crossover"
-            elif latest['MACD_12_26_9'] < latest['MACDs_12_26_9'] and \
-                 data['MACD_12_26_9'].iloc[-2] >= data['MACDs_12_26_9'].iloc[-2]:
-                macd_signal = "Bearish Crossover"
-            else:
-                macd_signal = "Neutral"
+            rsi_signal = "Neutral"
+            rsi_value = 50.0
+            try:
+                rsi_value = float(latest_row.get('RSI', 50)) if not pd.isna(latest_row.get('RSI')) else 50.0
+                if rsi_value > 70:
+                    rsi_signal = "Overbought"
+                elif rsi_value < 30:
+                    rsi_signal = "Oversold"
+            except:
+                rsi_signal = "Unknown"
             
             analysis[company] = {
-                'Price': round(latest['Close'], 2),
-                'Change (%)': round(price_change, 2),
+                'Price': round(current_price, 2),
+                'Change (%)': round(price_change_pct, 2),
                 'Trend': trend,
-                'RSI': round(latest['RSI'], 2),
+                'RSI': round(rsi_value, 2),
                 'RSI Signal': rsi_signal,
-                'MACD Signal': macd_signal,
-                '20-Day MA': round(latest['SMA_20'], 2),
-                '50-Day MA': round(latest['SMA_50'], 2),
-                '200-Day MA': round(latest['SMA_200'], 2),
-                'VWAP': round(latest['VWAP'], 2)
+                '20-Day MA': round(float(latest_row.get('SMA_20', current_price)), 2) if not pd.isna(latest_row.get('SMA_20')) else round(current_price, 2),
+                '50-Day MA': round(float(latest_row.get('SMA_50', current_price)), 2) if not pd.isna(latest_row.get('SMA_50')) else round(current_price, 2),
+                '200-Day MA': round(float(latest_row.get('SMA_200', current_price)), 2) if not pd.isna(latest_row.get('SMA_200')) else round(current_price, 2),
             }
             
         except Exception as e:
-            print(f"Error analyzing {company}: {str(e)}")
+            print(f"Error analyzing {company}: {e}")
             analysis[company] = {"error": str(e)}
     
     return analysis
 
 def plot_stock_data(stock_data, company):
-    """Generate technical analysis plots for a stock"""
+    """Generate simple stock plots"""
     try:
-        df = stock_data[company].copy()
-        if df.empty:
+        df = stock_data[company]
+        if df.empty or len(df) < 30:
             return None
             
-        # Create subplots
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(15, 12), gridspec_kw={'height_ratios': [3, 1, 1]})
+        # Create simple plot
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
         
-        # Plot candlesticks
-        mpf.plot(df[-90:], type='candle', style='charles', ax=ax1, 
-                volume=ax2, mav=(20, 50, 200), returnfig=False)
+        # Price chart
+        ax1.plot(df.index, df['Close'], label='Close Price', linewidth=2)
+        if 'SMA_20' in df.columns:
+            ax1.plot(df.index, df['SMA_20'], label='20-Day MA', alpha=0.7)
+        if 'SMA_50' in df.columns:
+            ax1.plot(df.index, df['SMA_50'], label='50-Day MA', alpha=0.7)
+        ax1.set_title(f'{company} Price Chart')
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
         
-        # Plot RSI
-        ax3.set_title('RSI (14)')
-        ax3.plot(df.index[-90:], df['RSI'][-90:], label='RSI', color='purple')
-        ax3.axhline(70, color='red', linestyle='--', alpha=0.5)
-        ax3.axhline(30, color='green', linestyle='--', alpha=0.5)
-        ax3.fill_between(df.index[-90:], 70, 30, color='gray', alpha=0.1)
-        ax3.legend()
+        # RSI chart if available
+        if 'RSI' in df.columns:
+            ax2.plot(df.index, df['RSI'], label='RSI', color='purple')
+            ax2.axhline(70, color='red', linestyle='--', alpha=0.5, label='Overbought')
+            ax2.axhline(30, color='green', linestyle='--', alpha=0.5, label='Oversold')
+            ax2.set_title('RSI (14)')
+            ax2.legend()
+            ax2.grid(True, alpha=0.3)
         
-        plt.suptitle(f'{company} Technical Analysis', fontsize=16)
         plt.tight_layout()
         
-        # Save the plot
+        # Save plot
         os.makedirs('plots', exist_ok=True)
-        plot_path = f'plots/{company.replace(" ", "_")}_analysis.png'
-        plt.savefig(plot_path)
+        plot_path = f'plots/{company.replace(" ", "_").replace("&", "and")}_analysis.png'
+        plt.savefig(plot_path, dpi=100, bbox_inches='tight')
         plt.close()
         
         return plot_path
+        
     except Exception as e:
-        print(f"Error generating plot for {company}: {str(e)}")
+        print(f"Plot error for {company}: {e}")
         return None
 
 def analyze_stocks(stock_group="indian_it"):
     """
-    Analyze stocks with technical indicators
-    
-    Args:
-        stock_group (str): Key from STOCK_CONFIG to get the list of stocks
-        
-    Returns:
-        tuple: (prompt, analysis, plot_paths, metadata)
+    Analyze stocks with simple technical indicators
     """
-    print(f"Fetching market data for {stock_group}...")
-    stock_data, metadata = get_stock_data(stock_group=stock_group, period="1y", interval="1d")
+    print(f"Fetching data for {stock_group}...")
+    stock_data, metadata = get_stock_data(stock_group=stock_group)
     
     if not stock_data:
-        return "Error: Could not fetch stock data. Please try again later.", {}, {}
+        return "No data available", {}, {}, {}
     
-    print("Performing technical analysis...")
-    analysis = generate_technical_analysis(stock_data)
+    print("Performing analysis...")
+    analysis = generate_simple_analysis(stock_data)
     
-    # Generate plots for top 3 stocks by market cap
-    top_companies = sorted(
-        [k for k in analysis.keys() if 'error' not in analysis[k]],
-        key=lambda x: analysis[x].get('Price', 0),
-        reverse=True
-    )[:3]
+    # Generate plots for top stocks
+    successful_stocks = [k for k, v in analysis.items() if 'error' not in v]
+    top_companies = successful_stocks[:3]  # Just take first 3
     
     plot_paths = {}
     for company in top_companies:
@@ -237,7 +268,7 @@ def analyze_stocks(stock_group="indian_it"):
         if plot_path:
             plot_paths[company] = plot_path
     
-    # Get sector information from metadata
+    # Prepare analysis prompt
     sectors = {}
     for company, data in metadata.items():
         sector = data.get('sector', 'Other')
@@ -245,35 +276,26 @@ def analyze_stocks(stock_group="indian_it"):
             sectors[sector] = []
         sectors[sector].append(company)
     
-    # Prepare analysis prompt
     prompt = f"""
-    Perform a comprehensive technical analysis of the {stock_group.replace('_', ' ').title()} sector based on the provided data.
-    
+    Analyze the {stock_group.replace('_', ' ').title()} sector based on this technical data:
+
     Sector Breakdown:
     """
     
-    # Add sector information
     for sector, companies in sectors.items():
         prompt += f"- {sector}: {', '.join(companies)}\n"
     
-    prompt += """
+    prompt += f"""
     
-    For each stock, analyze and include:
-    1. Current price and daily change
-    2. Trend analysis using moving averages (20, 50, 200-day)
-    3. RSI (Relative Strength Index) and its implications
-    4. MACD (Moving Average Convergence Divergence) signals
-    5. Support and resistance levels from Bollinger Bands
-    6. Volume analysis and VWAP
-    
-    Then provide:
-    1. Overall market sentiment (Bullish/Bearish/Neutral)
-    2. Top 3 stocks with strongest technical setup
-    3. Stocks showing reversal or continuation patterns
-    4. Key support and resistance levels to watch
-    5. Trading recommendations based on technicals
-    
-    Use tables to present the data clearly and include specific price levels.
+    Provide a technical analysis covering:
+    1. Current price levels and changes
+    2. Trend direction based on moving averages
+    3. RSI levels and overbought/oversold conditions
+    4. Overall market sentiment
+    5. Top performing stocks
+    6. Trading recommendations
+
+    Focus on clear, actionable insights.
     """
     
     return prompt, analysis, plot_paths, metadata
@@ -281,49 +303,36 @@ def analyze_stocks(stock_group="indian_it"):
 # Initialize agents
 web_agent = Agent(
     name="web_agent",
-    role="Search the web and answer questions based on the search results.",
+    role="Search the web for market information",
     model=llm,
     tools=[DuckDuckGoTools()],
-    instructions="""You are a web agent that can search the web and answer questions about Indian markets. 
-    Always include sources and focus on Indian stock market context.
-    Provide recent and relevant information.""",
+    instructions="Search for recent Indian market news and trends. Include sources.",
     markdown=True,
 )
 
 finance_agent = Agent(
     name="finance_agent",
-    role="Get Financial Data for Indian Markets",
+    role="Get financial data",
     model=llm,
     tools=[YFinanceTools()],
-    instructions="""You are a finance agent that can get financial data for Indian companies. 
-    Always include sources. Use tables to display the data. 
-    Focus on key metrics like current price, 52-week high/low, PE ratio, and market cap.
-    For Indian stocks, use the .NS suffix (e.g., TCS.NS for TCS).""",
+    instructions="Get current stock prices and basic financial metrics for Indian companies.",
     markdown=True,
 )
 
 market_research_agent = Agent(
     name="market_research_agent",
-    role="Indian Market Research Agent",
+    role="Market research analyst",
     model=llm,
     tools=[web_agent, finance_agent],
-    instructions="""You are a market research agent focused on Indian markets. 
-    Analyze and provide insights on Indian IT and semiconductor companies. 
-    Always include sources and use tables to display financial data. 
-    Provide both fundamental and technical analysis where relevant.
-    Focus on recent trends and data.""",
+    instructions="Provide comprehensive market analysis with technical and fundamental insights for Indian stocks.",
     markdown=True,
 )
 
 def main(stock_group=None):
     """
-    Main function to run the market analysis
-    
-    Args:
-        stock_group (str, optional): Specific stock group to analyze. If None, analyzes all groups.
+    Main function to run market analysis
     """
     if stock_group is None:
-        # Analyze all stock groups
         for group in STOCK_CONFIG.keys():
             analyze_and_display(group)
     else:
@@ -331,76 +340,64 @@ def main(stock_group=None):
 
 def analyze_and_display(stock_group):
     """
-    Analyze and display results for a specific stock group
-    
-    Args:
-        stock_group (str): The stock group to analyze
+    Analyze and display results for a stock group
     """
-    print(f"\n{'='*80}")
-    print(f"Analyzing {stock_group.replace('_', ' ').title()} with Technical Indicators...\n")
+    print(f"\n{'='*60}")
+    print(f"ANALYZING: {stock_group.replace('_', ' ').title()}")
+    print('='*60)
     
     try:
-        # Get analysis with technical indicators
-        analysis_prompt, analysis_data, plot_paths, metadata = analyze_stocks(stock_group=stock_group)
+        analysis_prompt, analysis_data, plot_paths, metadata = analyze_stocks(stock_group)
         
         if not analysis_data:
-            print(f"No analysis data available for {stock_group}. Skipping...")
+            print("No analysis data available")
             return
         
-        # Add technical data to the prompt
-        analysis_prompt += "\n\nTechnical Data Summary:\n"
+        # Create summary table
+        successful_data = {k: v for k, v in analysis_data.items() if 'error' not in v}
+        if successful_data:
+            df = pd.DataFrame(successful_data).T
+            
+            # Add sector info
+            sectors = []
+            for company in df.index:
+                sectors.append(metadata.get(company, {}).get('sector', 'N/A'))
+            df['Sector'] = sectors
+            
+            # Reorder columns
+            cols = ['Sector'] + [col for col in df.columns if col != 'Sector']
+            df = df[cols]
+            
+            print("\n📊 TECHNICAL ANALYSIS SUMMARY:")
+            print(df.to_string())
+            
+            # Add data to prompt
+            analysis_prompt += f"\n\nTechnical Data:\n{df.to_markdown()}"
         
-        # Create a DataFrame with analysis data
-        analysis_df = pd.DataFrame(analysis_data).T
-        
-        # Add sector information to the DataFrame
-        sectors = []
-        for company in analysis_df.index:
-            sectors.append(metadata.get(company, {}).get('sector', 'N/A'))
-        analysis_df['Sector'] = sectors
-        
-        # Reorder columns to show sector first
-        cols = ['Sector'] + [col for col in analysis_df.columns if col != 'Sector']
-        analysis_df = analysis_df[cols]
-        
-        # Convert DataFrame to markdown and add to prompt
-        analysis_prompt += analysis_df.to_markdown()
-        
-        # Get analysis from the market research agent
-        print("\nGenerating comprehensive market analysis...\n")
+        # Get AI analysis
+        print("\n🤖 AI MARKET ANALYSIS:")
         market_research_agent.print_response(analysis_prompt)
         
-        # Show plot paths if available
+        # Show plots
         if plot_paths:
-            print("\nTechnical analysis plots saved in the 'plots' directory:")
+            print("\n📈 PLOTS GENERATED:")
             for company, path in plot_paths.items():
-                print(f"- {company}: {path}")
+                print(f"  - {company}: {path}")
                 
     except Exception as e:
-        print(f"Error analyzing {stock_group}: {str(e)}")
-    
-    # Show available stock groups at the end of all analyses
-    if stock_group == list(STOCK_CONFIG.keys())[-1]:  # Only show once after last group
-        print("\n" + "="*80)
-        print("\nAvailable stock groups:")
-        for group in STOCK_CONFIG.keys():
-            print(f"- {group} ({len(STOCK_CONFIG[group])} stocks)")
-        print("\nYou can analyze a specific group by running: python main.py <group_name>")
-        print("Example: python main.py indian_banks")
+        print(f"Analysis error: {e}")
 
 if __name__ == "__main__":
     import sys
     
     if len(sys.argv) > 1:
-        # If a stock group is provided as a command-line argument
         stock_group = sys.argv[1]
         if stock_group not in STOCK_CONFIG:
             print(f"Error: Stock group '{stock_group}' not found.")
-            print("\nAvailable stock groups:")
+            print("\nAvailable groups:")
             for group in STOCK_CONFIG.keys():
-                print(f"- {group} ({len(STOCK_CONFIG[group])} stocks)")
+                print(f"  - {group}")
             sys.exit(1)
         main(stock_group)
     else:
-        # If no arguments, analyze all stock groups
         main()
