@@ -1,4 +1,4 @@
-# Indian Market Research Tool
+# Market Research Tool
 
 A Python-based tool for analyzing Indian stock market data with advanced technical indicators and AI-powered insights.
 
@@ -14,8 +14,8 @@ A Python-based tool for analyzing Indian stock market data with advanced technic
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/indian-market-research.git
-   cd indian-market-research
+   git clone https://github.com/yourusername/market-research.git
+   cd market-research
    ```
 
 2. Create and activate a virtual environment (recommended):
