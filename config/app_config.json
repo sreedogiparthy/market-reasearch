@@ -1,7 +1,7 @@
 {
   "analysis_settings": {
     "default_period": "1y",
-    "technical_indicators": ["RSI", "MACD", "BBANDS", "SMA", "VWAP", "ATR", "ICHIMOKU"],
+    "technical_indicators": ["RSI", "MACD", "BBANDS", "SMA", "VWAP", "ATR"],
     "risk_free_rate": 0.05,
     "cache_duration": 300,
     "max_retries": 3
@@ -17,5 +17,33 @@
     "rsi_oversold": 30,
     "high_volatility_threshold": 0.02,
     "volume_spike_threshold": 2.0
+  },
+  "trading_settings": {
+    "paper_trading": true,
+    "initial_capital": 100000,
+    "max_portfolio_risk": 0.02,
+    "max_position_size": 0.1,
+    "trading_hours_only": true,
+    "market_open": "09:15",
+    "market_close": "15:30",
+    "commission": 0.001
+  },
+  "risk_management": {
+    "enable_stop_loss": true,
+    "enable_take_profit": true,
+    "max_daily_loss": 0.05,
+    "max_consecutive_losses": 3
+  },
+  "signal_generation": {
+    "min_confidence": 0.6,
+    "volume_threshold": 0.7,
+    "enable_multitimeframe": true
+  },
+  "backtest": {
+    "initial_capital": 100000,
+    "commission": 0.001,
+    "slippage": 0.0005,
+    "start_date": "2023-01-01",
+    "end_date": "2023-12-31"
   }
 }

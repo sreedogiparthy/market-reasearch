@@ -1,0 +1,17 @@
+2025-11-01 14:42:43,450 - INFO - Starting backtest from 2022-01-01 to 2023-01-01
+2025-11-01 14:42:43,450 - INFO - Downloading data for RELIANCE.NS from 2022-01-01 to 2023-01-01
+2025-11-01 14:42:43,791 - INFO - Downloaded 248 rows of clean data for RELIANCE.NS
+2025-11-01 14:42:43,791 - INFO - Downloading data for TCS.NS from 2022-01-01 00:00:00 to 2023-01-01 00:00:00
+2025-11-01 14:42:44,088 - INFO - Downloaded 248 rows of clean data for TCS.NS
+2025-11-01 14:42:44,088 - INFO - Downloading data for HDFCBANK.NS from 2022-01-01 00:00:00 to 2023-01-01 00:00:00
+2025-11-01 14:42:44,370 - INFO - Downloaded 248 rows of clean data for HDFCBANK.NS
+2025-11-01 14:42:44,371 - INFO - Downloading data for INFY.NS from 2022-01-01 00:00:00 to 2023-01-01 00:00:00
+2025-11-01 14:42:44,693 - INFO - Downloaded 248 rows of clean data for INFY.NS
+2025-11-01 14:42:44,694 - INFO - Downloaded data for 4 symbols
+2025-11-01 14:42:44,698 - INFO - Prepared data for 4 symbols
+2025-11-01 14:42:44,700 - ERROR - Error in run_backtest: name 'tqdm' is not defined
+Traceback (most recent call last):
+  File "/Users/sreenivasdogiparthy/workshop/market-research/trading_bot.py", line 869, in run_backtest
+    for current_date in tqdm(all_dates, desc="Running backtest"):
+                        ^^^^
+NameError: name 'tqdm' is not defined
