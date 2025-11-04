@@ -1,21 +1,36 @@
 {
-  "analysis_settings": {
-    "default_period": "1y",
-    "technical_indicators": ["RSI", "MACD", "BBANDS", "SMA", "VWAP", "ATR", "ICHIMOKU"],
-    "risk_free_rate": 0.05,
-    "cache_duration": 300,
-    "max_retries": 3
-  },
-  "plot_settings": {
-    "style": "fivethirtyeight",
-    "figsize": [15, 8],
-    "dpi": 100,
-    "save_directory": "plots"
-  },
-  "risk_settings": {
-    "rsi_overbought": 70,
-    "rsi_oversold": 30,
-    "high_volatility_threshold": 0.02,
-    "volume_spike_threshold": 2.0
-  }
+    "analysis_settings": {
+        "default_period": "1y",
+        "technical_indicators": ["RSI", "MACD", "BBANDS", "SMA", "VWAP", "ATR", "ICHIMOKU"],
+        "options_analysis": true,
+        "intraday_analysis": true,
+        "risk_management": true,
+        "backtesting": true,
+        "risk_free_rate": 0.05,
+        "cache_duration": 300,
+        "max_retries": 3
+    },
+    
+    "options_settings": {
+        "default_expiration": "nearest",
+        "calculate_greeks": true,
+        "pcr_analysis": true,
+        "skew_analysis": true
+    },
+    
+    "risk_settings": {
+        "account_size": 10000,
+        "risk_per_trade": 0.01,
+        "max_portfolio_risk": 0.05,
+        "stop_loss_method": "atr",  
+        "position_sizing_method": "kelly"   
+    },
+    
+    "backtest_settings": {
+        "initial_capital": 10000,
+        "commission": 0.001,
+        "slippage": 0.0005,
+        "walk_forward": true,
+        "monte_carlo_sims": 1000
+    }
 }

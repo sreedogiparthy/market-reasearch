@@ -2,6 +2,10 @@ from agno.agent import Agent
 from agno.models.groq import Groq
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.yfinance import YFinanceTools
+from agno.tools.pandas import PandasTools
+import optuna  # for hyperparameter optimization
+from backtesting import Backtest  # for backtesting framework
+import quantstats as qs  # for performance analytics
 from dotenv import load_dotenv
 import yfinance as yf
 import pandas as pd
@@ -14,6 +18,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 from matplotlib import style
+
+# Import local modules
+from tech_indicators import IntradayAnalyzer
+from risk_manager import RiskManager
+from backtesting_engine import BacktestingEngine
+from option_chain_analysis import OptionsAnalyzer
 
 # Set style for plots
 style.use('fivethirtyeight')
@@ -285,7 +295,7 @@ def analyze_stocks(stock_group="indian_it"):
     for sector, companies in sectors.items():
         prompt += f"- {sector}: {', '.join(companies)}\n"
     
-    prompt += f"""
+    prompt += """
     
     Provide a technical analysis covering:
     1. Current price levels and changes
@@ -294,110 +304,4 @@ def analyze_stocks(stock_group="indian_it"):
     4. Overall market sentiment
     5. Top performing stocks
     6. Trading recommendations
-
-    Focus on clear, actionable insights.
     """
-    
-    return prompt, analysis, plot_paths, metadata
-
-# Initialize agents
-web_agent = Agent(
-    name="web_agent",
-    role="Search the web for market information",
-    model=llm,
-    tools=[DuckDuckGoTools()],
-    instructions="Search for recent Indian market news and trends. Include sources.",
-    markdown=True,
-)
-
-finance_agent = Agent(
-    name="finance_agent",
-    role="Get financial data",
-    model=llm,
-    tools=[YFinanceTools()],
-    instructions="Get current stock prices and basic financial metrics for Indian companies.",
-    markdown=True,
-)
-
-market_research_agent = Agent(
-    name="market_research_agent",
-    role="Market research analyst",
-    model=llm,
-    tools=[web_agent, finance_agent],
-    instructions="Provide comprehensive market analysis with technical and fundamental insights for Indian stocks.",
-    markdown=True,
-)
-
-def main(stock_group=None):
-    """
-    Main function to run market analysis
-    """
-    if stock_group is None:
-        for group in STOCK_CONFIG.keys():
-            analyze_and_display(group)
-    else:
-        analyze_and_display(stock_group)
-
-def analyze_and_display(stock_group):
-    """
-    Analyze and display results for a stock group
-    """
-    print(f"\n{'='*60}")
-    print(f"ANALYZING: {stock_group.replace('_', ' ').title()}")
-    print('='*60)
-    
-    try:
-        analysis_prompt, analysis_data, plot_paths, metadata = analyze_stocks(stock_group)
-        
-        if not analysis_data:
-            print("No analysis data available")
-            return
-        
-        # Create summary table
-        successful_data = {k: v for k, v in analysis_data.items() if 'error' not in v}
-        if successful_data:
-            df = pd.DataFrame(successful_data).T
-            
-            # Add sector info
-            sectors = []
-            for company in df.index:
-                sectors.append(metadata.get(company, {}).get('sector', 'N/A'))
-            df['Sector'] = sectors
-            
-            # Reorder columns
-            cols = ['Sector'] + [col for col in df.columns if col != 'Sector']
-            df = df[cols]
-            
-            print("\n📊 TECHNICAL ANALYSIS SUMMARY:")
-            print(df.to_string())
-            
-            # Add data to prompt
-            analysis_prompt += f"\n\nTechnical Data:\n{df.to_markdown()}"
-        
-        # Get AI analysis
-        print("\n🤖 AI MARKET ANALYSIS:")
-        market_research_agent.print_response(analysis_prompt)
-        
-        # Show plots
-        if plot_paths:
-            print("\n📈 PLOTS GENERATED:")
-            for company, path in plot_paths.items():
-                print(f"  - {company}: {path}")
-                
-    except Exception as e:
-        print(f"Analysis error: {e}")
-
-if __name__ == "__main__":
-    import sys
-    
-    if len(sys.argv) > 1:
-        stock_group = sys.argv[1]
-        if stock_group not in STOCK_CONFIG:
-            print(f"Error: Stock group '{stock_group}' not found.")
-            print("\nAvailable groups:")
-            for group in STOCK_CONFIG.keys():
-                print(f"  - {group}")
-            sys.exit(1)
-        main(stock_group)
-    else:
-        main()
