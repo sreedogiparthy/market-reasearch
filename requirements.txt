@@ -1,26 +1,46 @@
-agno>=2.2.5
-groq>=0.33.0
-duckduckgo-search>=8.1.1
+# Core dependencies
 yfinance>=0.2.66
-python-dotenv>=1.0.0
 pandas>=2.0.0
+numpy>=1.22.0
+scipy>=1.7.0
 requests>=2.31.0
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
+python-dateutil>=2.8.2
+pytz>=2021.3
+
+# Data analysis and visualization
 pandas-ta>=0.4.71b0
 mplfinance>=0.12.10b0
 matplotlib>=3.7.0
-numpy>=1.22.0
-ddgs>=0.1.0
-tabulate>=0.9.0
-
-# Additional dependencies for enhanced features
-scipy>=1.7.0
-optuna>=2.10.0
-quantstats>=0.0.37
-backtesting>=0.3.3
-scikit-learn>=1.0.0
-python-dateutil>=2.8.2
-pytz>=2021.3
 plotly>=5.0.0
 cufflinks>=0.17.3
+tabulate>=0.9.0
+
+# Web scraping and data collection
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+duckduckgo-search>=8.1.1
+
+# Machine learning and optimization
+scikit-learn>=1.0.0
+optuna>=2.10.0
+
+# Additional utilities
+python-dotenv>=1.0.0
+ddgs>=0.1.0
+quantstats>=0.3.7
+backtesting>=0.3.3
+
+# Options analysis specific
+ta>=0.10.0  # Technical analysis library
+agno>=2.2.5
+groq>=0.33.0
+
+# For generating reports
+markdown2>=2.4.0
+tqdm>=4.65.0  # Progress bars for long-running operations
+
+# Development and testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+black>=23.0.0
+flake8>=6.0.0
