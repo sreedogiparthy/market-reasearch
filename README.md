@@ -1,6 +1,113 @@
 # 📈 Market Research & Analysis Tool
 
-A comprehensive Python-based solution for technical and fundamental analysis of global markets with AI-powered insights, risk assessment, and automated reporting.
+A comprehensive Python-based solution for technical and fundamental analysis of global markets with AI-powered insights, risk assessment, backtesting, and automated reporting.
+
+## 🚀 Key Features
+
+- **Dynamic Stock Configuration**: Manage stock symbols and metadata through `config/stocks.json`
+- **Modular Architecture**: Clean separation of concerns with dedicated modules for data, analysis, visualization, and backtesting
+- **Comprehensive Analysis**: Technical indicators, fundamental data, news integration, and strategy backtesting
+- **Extensible Design**: Easy to add new analysis methods, data sources, and trading strategies
+- **Automated Testing**: Comprehensive test suite with integration tests for all major components
+
+## 🛠 Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yourusername/market-research.git
+   cd market-research
+   ```
+
+2. **Set up a virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## 🏗 Project Structure
+
+```
+market-research/
+├── config/                    # Configuration files
+│   ├── __init__.py
+│   ├── stock_config.py        # Stock configuration and symbol mapping
+│   └── stocks.json            # Stock symbols and metadata
+│
+├── data/                      # Data handling
+│   ├── __init__.py
+│   └── fetcher.py             # Data fetching and processing
+│
+├── analysis/                  # Analysis modules
+│   ├── __init__.py
+│   ├── technical.py           # Technical analysis
+│   └── fundamental.py         # Fundamental analysis
+│
+├── visualization/             # Visualization tools
+│   ├── __init__.py
+│   └── plotter.py             # Plot generation
+│
+├── backtesting_engine.py      # Strategy backtesting framework
+├── main.py                    # Main application entry point
+├── test_integration.py        # Integration tests
+├── run.sh                     # Setup and execution script
+└── requirements.txt           # Python dependencies
+```
+
+## 🚦 Running the Application
+
+### Using the run.sh script (recommended):
+```bash
+# Make the script executable if needed
+chmod +x run.sh
+
+# Run the complete workflow
+./run.sh
+```
+
+### Running directly:
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the main application
+python main.py --group indian_it
+```
+
+## 🧪 Running Tests
+
+```bash
+# Run all tests
+python -m pytest test_integration.py -v
+
+# Run a specific test
+python -m pytest test_integration.py::test_specific_test -v
+```
+
+## 📝 Configuration
+
+1. **Stock Configuration**: Edit `config/stocks.json` to add or modify stock groups and symbols
+2. **Environment Variables**: Create a `.env` file with your API keys:
+   ```
+   FINNHUB_API_KEY=your_api_key_here
+   ALPHA_VANTAGE_API_KEY=your_api_key_here
+   ```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
 
 [![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,7 +118,19 @@ A comprehensive Python-based solution for technical and fundamental analysis of 
 ## 🚀 Key Features
 
 ### 📊 Technical Analysis
-- **Comprehensive Indicators**: RSI, MACD, Bollinger Bands, Ichimoku Cloud, ATR, VWAP, and more
+- **Comprehensive Indicators**: RSI, MACD, Bollinger Bands, Ichimoku Cloud, ATR, VWAP, Moving Averages, and more
+- **Multiple Timeframes**: Analyze data across different time periods
+- **Custom Strategies**: Implement and test your own trading strategies
+
+### 📈 Backtesting
+- **Strategy Testing**: Test trading strategies with historical data
+- **Performance Metrics**: Sharpe ratio, max drawdown, win rate, and more
+- **Custom Parameters**: Fine-tune strategy parameters for optimization
+
+### 📊 Visualization
+- **Interactive Plots**: Generate and save visualizations of technical indicators
+- **Customizable Charts**: Tailor plots to your analysis needs
+- **Multiple Output Formats**: Save plots as PNG or view interactively
 - **Multiple Timeframes**: Analyze data from 1-minute to monthly intervals
 - **Customizable Settings**: Adjust all technical parameters to fit your trading style
 

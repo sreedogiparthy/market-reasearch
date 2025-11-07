@@ -2,7 +2,20 @@
 
 Welcome to the Market Analysis Tool! This guide will help you get started with analyzing stocks, generating reports, and making data-driven trading decisions using our powerful Python-based platform.
 
-## 🎯 Quick Start Guide
+## 🏗 Architecture Overview
+
+The tool is built with a modular architecture for maintainability and extensibility:
+
+```
+market-research/
+├── config/           # Configuration files
+├── data/             # Data fetching and processing
+├── analysis/         # Analysis modules
+├── visualization/    # Plotting and reporting
+└── backtesting_engine.py  # Strategy backtesting
+```
+
+## 🚀 Quick Start Guide
 
 ### 1. Installation
 ```bash
@@ -11,36 +24,70 @@ git clone https://github.com/yourusername/market-research.git
 cd market-research
 
 # Set up virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
 ### 2. Configuration
-Create a `.env` file with your API keys:
-```env
-# Required
-GROQ_API_KEY=your_groq_api_key_here
-GROQ_MODEL=llama-3.1-8b-instant
+1. Create a `.env` file with your API keys:
+   ```env
+   FINNHUB_API_KEY=your_finnhub_key
+   ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
+   ```
 
-# Optional
-ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
-FINNHUB_API_KEY=your_finnhub_key
-```
+2. Configure stock groups in `config/stocks.json`
 
 ### 3. Run Your First Analysis
 ```bash
-# Analyze a single stock
-python market_analysis.py --symbol AAPL
+# Make the script executable
+chmod +x run.sh
 
-# Analyze a group of stocks
-python market_analysis.py nifty_50
+# Run the complete workflow (recommended)
+./run.sh
 
-# Generate an HTML report
-python market_analysis.py --symbol AAPL --format html --output reports/
+# Or run the main application directly
+python main.py --group indian_it
 ```
+
+## 🔍 Understanding the Analysis
+
+### 1. Technical Analysis
+- **Trend Indicators**: SMA, EMA, MACD, ADX, Ichimoku Cloud
+- **Momentum Oscillators**: RSI, Stochastic, CCI, ROC
+- **Volatility Measures**: Bollinger Bands, ATR, Keltner Channels
+- **Volume Analysis**: OBV, VWAP, MFI, Accumulation/Distribution
+- **Pattern Recognition**: Support/Resistance, Chart Patterns
+
+### 2. Fundamental Analysis
+- **Valuation Metrics**: P/E, P/B, P/S, EV/EBITDA ratios
+   - P/E Ratio: Price-to-Earnings ratio
+   - P/B Ratio: Price-to-Book value
+   - Dividend Yield: Annual dividend/current price
+   - Market Cap: Company valuation
+- **Growth Metrics**: Revenue growth, EPS growth
+- **Profitability**: ROE, ROA, Gross/Net Margins
+- **Analyst Coverage**: Ratings, price targets, recommendations
+
+### 3. Backtesting & Strategy
+- **Moving Average Crossover**: Tested strategy included
+- **Custom Strategy Support**: Implement your own strategies
+- **Performance Metrics**:
+  - Total Return
+  - Annualized Return
+  - Volatility
+  - Sharpe Ratio
+  - Max Drawdown
+  - Win Rate
+  - Profit Factor
+
+### 4. Risk Management
+- Position Sizing
+- Stop-Loss Strategies
+- Risk-Reward Analysis
+- Portfolio Optimization
 
 ## 📊 Understanding the Analysis
 
@@ -64,13 +111,47 @@ python market_analysis.py --symbol AAPL --format html --output reports/
    - Trade ideas and setups
    - Risk assessment
 
-### Reading the Reports
+### 📊 Understanding the Output
 
-#### 1. Executive Summary
-- Market overview
-- Key findings
-- Top opportunities
-- Risk assessment
+#### 1. Console Output
+- **Stock Table**: Overview of all analyzed stocks
+  - Current price and daily change
+  - Key technical indicators
+  - Trend and momentum signals
+  - Volume analysis
+
+#### 2. Generated Plots (in `plots/` directory)
+- **Price Chart**: Candlestick chart with moving averages
+- **RSI Chart**: Relative Strength Index with overbought/oversold levels
+- **MACD Chart**: Moving Average Convergence Divergence
+- **Volume Profile**: Trading volume with moving average
+
+#### 3. Backtest Results
+- **Equity Curve**: Account value over time
+- **Trade History**: List of all trades with entry/exit points
+- **Performance Metrics**: Detailed statistics about strategy performance
+
+### 🛠 Troubleshooting
+
+#### Common Issues
+1. **API Rate Limits**:
+   - If you see rate limit errors, consider upgrading your API plan or reducing the number of requests
+   - Implement proper error handling and retries in your code
+
+2. **Missing Data**:
+   - Check if the stock symbol is correct
+   - Verify your internet connection
+   - Some historical data might not be available for certain timeframes
+
+3. **Backtesting Errors**:
+   - Ensure sufficient historical data is available for the backtest period
+   - Verify that the strategy parameters are valid
+   - Check for look-ahead bias in your strategy
+
+#### Getting Help
+- Check the project's [Issues](https://github.com/yourusername/market-research/issues) page
+- Review the [documentation](https://github.com/yourusername/market-research/wiki)
+- For bugs or feature requests, please open a new issue
 
 #### 2. Technical Analysis
 - Price action analysis
