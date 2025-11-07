@@ -31,16 +31,16 @@ echo "Python $PYTHON_VERSION is installed"
 section "Setting up virtual environment"
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv venv || error_exit "Failed to create virtual environment"
+    python3 -m venv .venv || error_exit "Failed to create virtual environment"
 else
     echo "Virtual environment already exists"
 fi
 
 # Activate virtual environment
-if [ -f "venv/bin/activate" ]; then
-    source venv/bin/activate  # Linux/Mac
+if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate  # Linux/Mac
 else
-    source venv/Scripts/activate  # Windows
+    source .venv/Scripts/activate  # Windows
 fi
 
 # Upgrade pip
