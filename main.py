@@ -1,26 +1,34 @@
-from agno.agent import Agent
-from agno.models.groq import Groq
-from agno.tools.duckduckgo import DuckDuckGoTools
-from agno.tools.yfinance import YFinanceTools
-from agno.tools.pandas import PandasTools
-import optuna  # for hyperparameter optimization
-from backtesting import Backtest  # for backtesting framework
-import quantstats as qs  # for performance analytics
-from dotenv import load_dotenv
-import yfinance as yf
-import pandas as pd
-from ta import add_all_ta_features
-from ta.utils import dropna
-import mplfinance as mpf
-from datetime import datetime, timedelta
+# Commented out agno imports as they're not available
+# from agno.agent import Agent
+# from agno.models.groq import Groq
+# from agno.tools.duckduckgo import DuckDuckGoTools
+# from agno.tools.yfinance import YFinanceTools
+# from agno.tools.pandas import PandasTools
 import os
 import json
-import numpy as np
-import matplotlib.pyplot as plt
+import time
+import warnings
+import argparse
+from datetime import datetime, timedelta
+from typing import Dict, List, Any, Optional, Tuple
+import os
+from dotenv import load_dotenv
 from pathlib import Path
-from matplotlib import style
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
+import numpy as np
+import yfinance as yf
+import matplotlib.pyplot as plt
+from matplotlib import style
+import mplfinance as mpf
+from ta import add_all_ta_features
+from ta.utils import dropna
+
+# Suppress warnings
+warnings.filterwarnings('ignore', message='Series.__setitem__ treating keys as positions is deprecated')
+
+# Initialize API clients
+finnhub_client = None
+alpha_vantage_client = None
 
 # Import local modules
 # Note: tech_indicators.py, risk_manager.py, and backtesting_engine.py are not found
@@ -34,8 +42,30 @@ plt.rcParams['figure.figsize'] = (15, 8)
 
 load_dotenv()
 
-# Initialize LLM with Groq
-llm = Groq(id="llama-3.3-70b-versatile", temperature=0.7)
+# Initialize API clients
+try:
+        # Initialize API clients if available
+    try:
+        if os.getenv('FINNHUB_API_KEY'):
+            import finnhub
+            finnhub_client = finnhub.Client(api_key=os.getenv('FINNHUB_API_KEY'))
+    except ImportError:
+        print("Warning: finnhub-python not installed. Some features may be limited.")
+    
+    try:
+        if os.getenv('ALPHA_VANTAGE_API_KEY'):
+            from alpha_vantage.timeseries import TimeSeries
+            from alpha_vantage.techindicators import TechIndicators
+            from alpha_vantage.fundamentaldata import FundamentalData
+            ts = TimeSeries(key=os.getenv('ALPHA_VANTAGE_API_KEY'), output_format='pandas')
+            ti = TechIndicators(key=os.getenv('ALPHA_VANTAGE_API_KEY'), output_format='pandas')
+            fd = FundamentalData(key=os.getenv('ALPHA_VANTAGE_API_KEY'), output_format='pandas')
+    except ImportError:
+        print("Warning: alpha_vantage not installed. Some features may be limited.")
+    
+except Exception as e:
+    print(f"Error initializing API clients: {e}")
+    raise
 
 def load_stock_config():
     """Load stock configurations from JSON file"""
@@ -148,7 +178,7 @@ def get_stock_data(stock_group="indian_it", period="6mo", interval="1d"):
                 df_ta = df_ta[existing_columns]
                 
                 # Calculate daily change
-                df_ta['daily_change'] = df_ta['close'].pct_change() * 100
+                df_ta = df_ta.assign(daily_change=df_ta['close'].pct_change() * 100)
                 
                 # Use the new DataFrame with technical indicators
                 df = df_ta
@@ -291,13 +321,94 @@ def plot_stock_data(stock_data, company):
         print(f"Plot error for {company}: {e}")
         return None
 
+def get_fundamental_data(symbol: str) -> Dict[str, Any]:
+    """Get fundamental data with fallback to yfinance if API fails"""
+    try:
+        # Map company names to their correct Yahoo Finance symbols
+        symbol_map = {
+            'TCS': 'TCS.NS',
+            'Infosys': 'INFY.NS',
+            'Wipro': 'WIPRO.NS',
+            'HCL': 'HCLTECH.NS',
+            'HCL Tech': 'HCLTECH.NS',
+            'Tech Mahindra': 'TECHM.NS',
+            'Tech': 'TECHM.NS'
+        }
+        
+        ticker = symbol_map.get(symbol, f"{symbol}.NS")
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        
+        return {
+            'market_cap': info.get('marketCap', 0),
+            'pe_ratio': info.get('trailingPE', info.get('forwardPE', 0)),
+            'dividend_yield': info.get('dividendYield', 0) * 100 if info.get('dividendYield') else 0,
+            'profit_margin': info.get('profitMargins', 0) * 100 if info.get('profitMargins') else 0,
+            'analyst_target': info.get('targetMeanPrice', 0)
+        }
+    except Exception as e:
+        print(f"Error getting fundamental data for {symbol}: {e}")
+        return {}
+
+def get_analyst_recommendations(symbol: str) -> List[Dict]:
+    """Get analyst recommendations with fallback to empty list"""
+    if finnhub_client is None:
+        return []
+    try:
+        return finnhub_client.recommendation_trends(f"{symbol}.NS")
+    except Exception as e:
+        print(f"Error getting recommendations for {symbol}: {e}")
+        return []
+
+def get_company_news(symbol: str, days: int = 7) -> List[Dict]:
+    """Get recent company news with fallback to empty list"""
+    try:
+        symbol_map = {
+            'TCS': 'TCS.NS',
+            'Infosys': 'INFY.NS',
+            'Wipro': 'WIPRO.NS',
+            'HCL': 'HCLTECH.NS',
+            'HCL Tech': 'HCLTECH.NS',
+            'Tech Mahindra': 'TECHM.NS',
+            'Tech': 'TECHM.NS'
+        }
+        ticker = symbol_map.get(symbol, f"{symbol}.NS")
+        stock = yf.Ticker(ticker)
+        news = stock.news
+        return [{'headline': item.get('title', ''), 'url': item.get('link', '')} 
+               for item in news][:3]  # Return only top 3 news items
+    except Exception as e:
+        print(f"Error getting news for {symbol}: {e}")
+        return []
+
+def get_company_ticker(company_name, stock_group="indian_it"):
+    """Get the ticker symbol for a company from the config"""
+    if stock_group in STOCK_CONFIG:
+        # First try exact match
+        if company_name in STOCK_CONFIG[stock_group]:
+            if isinstance(STOCK_CONFIG[stock_group][company_name], dict):
+                return STOCK_CONFIG[stock_group][company_name].get('symbol', f"{company_name.split()[0]}.NS")
+            return STOCK_CONFIG[stock_group][company_name]
+        
+        # Try case-insensitive match
+        company_lower = company_name.lower()
+        for name, info in STOCK_CONFIG[stock_group].items():
+            if name.lower() == company_lower:
+                if isinstance(info, dict):
+                    return info.get('symbol', f"{name.split()[0]}.NS")
+                return info
+    
+    # Default to first part of company name with .NS suffix
+    return f"{company_name.split()[0]}.NS"
+
 def analyze_stocks(stock_group="indian_it"):
     """Main function to analyze stocks"""
     print(f"Fetching data for {stock_group}...")
     stock_data, metadata = get_stock_data(stock_group)
     
     if not stock_data:
-        return "No data available", {}, {}, {}
+        print("No data available")
+        return
     
     print("Performing analysis...")
     analysis = generate_simple_analysis(stock_data)
@@ -312,19 +423,20 @@ def analyze_stocks(stock_group="indian_it"):
         if plot_path:
             plot_paths[company] = plot_path
     
-    # Prepare analysis prompt
+    # Initialize sectors dictionary
     sectors = {}
-    for company, data in metadata.items():
-        sector = data.get('sector', 'Other')
+    for company, data in stock_data.items():
+        sector = metadata.get(company, {}).get('sector', 'Unknown')
         if sector not in sectors:
             sectors[sector] = []
         sectors[sector].append(company)
-    
+
     # Print analysis results in a tabular format
-    print("\nStock Analysis Report:")
-    print("-" * 100)
-    print(f"{'Company':<20} | {'Price':>10} | {'Change %':>10} | {'Trend':<15} | {'RSI':>8} | {'Signal':<10}")
-    print("-" * 100)
+    print("\n" + "="*120)
+    print(f"{'STOCK ANALYSIS REPORT':^120}")
+    print("="*120)
+    print(f"{'Company':<20} | {'Price':>10} | {'Change %':>10} | {'Trend':<15} | {'RSI':>8} | {'Signal':<10} | {'PE':>8} | {'Target':>10} | {'News'}")
+    print("-" * 120)
     
     # Initialize strategy lists
     long_term_stocks = []
@@ -332,28 +444,121 @@ def analyze_stocks(stock_group="indian_it"):
     swing_stocks = []
     options_stocks = []
     
-    for company, data in analysis.items():
-        if 'error' in data:
-            print(f"{company:<20} | {'Error':>10} | {'N/A':>10} | {'N/A':<15} | {'N/A':>8} | {data['error']}")
-            continue
+    for company, data in stock_data.items():
+        try:
+            # Get the latest data point (most recent)
+            if data.empty:
+                print(f"No data available for {company}")
+                continue
+                
+            latest = data.iloc[-1]
             
-        price = f"{data['Price']:.2f}" if data['Price'] is not None else 'N/A'
-        change = data['Change (%)'] if data['Change (%)'] is not None else 0
-        change_str = f"{change:+.2f}%"
-        trend = data.get('Trend', 'Neutral')
-        rsi = data.get('RSI')
-        rsi_str = f"{rsi:.2f}" if rsi is not None else 'N/A'
-        rsi_signal = data.get('RSI Signal', 'Neutral')
-        
-        print(f"{company:<20} | {price:>10} | {change_str:>10} | {trend:<15} | {rsi_str:>8} | {rsi_signal:<10}")
+            # Get price and change - using lowercase column names
+            close_price = latest.get('close')
+            if pd.isna(close_price) or close_price is None:
+                print(f"No price data for {company}")
+                continue
+                
+            # Format price with 2 decimal places
+            price = f"{float(close_price):.2f}"
+            
+            # Calculate daily change if not available
+            if 'daily_change' in latest:
+                daily_change = latest['daily_change']
+            elif len(data) > 1:
+                # Calculate daily change from previous close if not available
+                prev_close = data.iloc[-2]['close'] if len(data) > 1 else close_price
+                daily_change = ((close_price - prev_close) / prev_close) * 100 if prev_close else 0
+            else:
+                daily_change = 0
+                
+            if pd.isna(daily_change):
+                daily_change = 0
+                
+            change_str = f"{daily_change:+.2f}%"
+            
+            # Get technical indicators with proper defaults
+            sma_fast = latest.get('trend_sma_fast', 0) if 'trend_sma_fast' in latest else 0
+            sma_slow = latest.get('trend_sma_slow', 0) if 'trend_sma_slow' in latest else 0
+            trend = 'Bullish' if sma_fast > sma_slow else 'Bearish'
+            
+            rsi = latest.get('momentum_rsi')
+            rsi = float(rsi) if rsi is not None and not pd.isna(rsi) else None
+            rsi_str = f"{rsi:.2f}" if rsi is not None else 'N/A'
+            rsi_signal = (
+                'Overbought' if rsi and rsi > 70 
+                else 'Oversold' if rsi and rsi < 30 
+                else 'Neutral'
+            )
+
+
+            # Get additional data
+            try:
+                ticker = get_company_ticker(company, stock_group)
+                fundamental = get_fundamental_data(company)  # Use full company name
+                
+                # Safely get P/E ratio
+                pe_ratio = None
+                if fundamental and 'pe_ratio' in fundamental and fundamental['pe_ratio'] is not None:
+                    try:
+                        pe_ratio = float(fundamental['pe_ratio'])
+                        pe = f"{pe_ratio:.2f}"
+                    except (ValueError, TypeError):
+                        pe = 'N/A'
+                else:
+                    pe = 'N/A'
+                
+                # Safely get target price
+                target_price = None
+                if fundamental and 'analyst_target' in fundamental and fundamental['analyst_target'] is not None:
+                    try:
+                        target_price = float(fundamental['analyst_target'])
+                        target = f"{target_price:.2f}"
+                    except (ValueError, TypeError):
+                        target = 'N/A'
+                else:
+                    target = 'N/A'
+                
+                # Get latest news
+                news = get_company_news(company)  # Use full company name
+                news_snippet = news[0]['headline'][:30] + '...' if news and len(news) > 0 else 'No recent news'
+            
+            except Exception as e:
+                print(f"Error getting fundamental data for {company}: {e}")
+                pe = 'N/A'
+                target = 'N/A'
+                fundamental = {}
+                news = []
+                news_snippet = 'Error fetching news'
+            
+            # Print the row with proper alignment
+            try:
+                print(f"{company[:18]:<20} | {price:>10} | {change_str:>10} | {trend:<15} | {rsi_str:>8} | {rsi_signal:<10} | {pe:>8} | {target:>10} | {news_snippet[:30]}")
+            except Exception as e:
+                print(f"Error printing row for {company}: {e}")
+                continue
+            
+            # Store additional data for analysis
+            data['fundamental'] = fundamental if fundamental else {}
+            data['news'] = news if news else []
+            
+        except Exception as e:
+            print(f"Error processing {company}: {e}")
+            continue 
+
+        # Get recommendations if Finnhub client is available
+        if finnhub_client:
+            data['recommendations'] = get_analyst_recommendations(company)
+        else:
+            data['recommendations'] = []
         
         # Strategy classification
         stock_info = {
             'name': company,
-            'price': price,
-            'change': change,
+            'price': float(price.replace(',', '')),
+            'change': daily_change,
             'trend': trend,
-            'rsi': rsi,
+            'rsi': rsi if rsi != 'N/A' else None,
             'rsi_signal': rsi_signal
         }
         
