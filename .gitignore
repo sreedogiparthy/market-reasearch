@@ -1,19 +1,112 @@
-# Python-generated files
+# Python
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
 wheels/
-*.egg-info
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Virtual environments
+# Virtual Environment
 .venv
+venv/
+env/
+ENV/
 
-#Environment variables
+# Environment variables and secrets
 .env
+.env.local
+.env.*.local
+!.env.example
+secrets.yaml
 
-#Python version
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+*.csv
+*.xlsx
+*.xls
+*.db
+*.sqlite3
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# Local development
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Python version
 .python-version
 
-#Univention
-uv.lock
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Plotly
+*.html
+
+# Jupyter
+.jupyter/
+
+# VS Code
+.vscode/
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# Project specific exclusions
+/notebooks/
+/data/
+/output/
+/plots/
+/reports/
+
+# Keep empty directories
+!.gitkeep
